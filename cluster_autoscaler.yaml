@@ -1,0 +1,21 @@
+autoDiscovery:
+  clusterName: ${cluster_name}
+
+awsRegion: ${region}
+cloudProvider: aws
+
+rbac:
+  serviceAccount:
+    name: ${sa_name}
+    annotations:
+      eks.amazonaws.com/role-arn: ${role_arn}
+
+extraArgs:
+  scale-down-delay-after-add: 1m
+  scale-down-delay-after-failure: 1m
+  scale-down-unneeded-time: 1m
+
+service:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8085"

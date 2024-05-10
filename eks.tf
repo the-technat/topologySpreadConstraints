@@ -27,7 +27,7 @@ provider "kubernetes" {
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
-    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--output", "json"]
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--output", "json"]
   }
 }
 provider "helm" {
@@ -37,7 +37,7 @@ provider "helm" {
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
-      args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--output", "json"]
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--output", "json"]
     }
   }
 }
@@ -63,12 +63,12 @@ module "vpc" {
   single_nat_gateway = true
 }
 module "eks" {
-  source           = "terraform-aws-modules/eks/aws"
-  version          = "~> 20.0"
-  cluster_name     = local.name
-  cluster_version  = local.eks_version
+  source                         = "terraform-aws-modules/eks/aws"
+  version                        = "~> 20.0"
+  cluster_name                   = local.name
+  cluster_version                = local.eks_version
   cluster_endpoint_public_access = true
-  cluster_addons = { coredns = { most_recent = true } }
+  cluster_addons                 = { coredns = { most_recent = true } }
   cluster_service_ipv4_cidr      = "10.127.0.0/16" # may be ignored since we use cilium's kube-proxy replacement
   vpc_id                         = module.vpc.vpc_id
   control_plane_subnet_ids       = module.vpc.private_subnets
@@ -82,12 +82,12 @@ module "eks" {
       self        = true
     }
   }
-  cloudwatch_log_group_retention_in_days = 1
-  attach_cluster_encryption_policy       = false # KMS only causes problems when destroyed regurarly
-  create_kms_key                         = false # KMS only causes problems when destroyed regurarly
-  cluster_encryption_config              = {} # KMS only causes problems when destroyed regurarly
+  cloudwatch_log_group_retention_in_days   = 1
+  attach_cluster_encryption_policy         = false # KMS only causes problems when destroyed regurarly
+  create_kms_key                           = false # KMS only causes problems when destroyed regurarly
+  cluster_encryption_config                = {}    # KMS only causes problems when destroyed regurarly
   enable_cluster_creator_admin_permissions = true
-  access_entries = {}
+  access_entries                           = {}
   eks_managed_node_group_defaults = {
     capacity_type  = "SPOT"
     ami_type       = "AL2_x86_64"
@@ -101,16 +101,16 @@ module "eks" {
   }
   eks_managed_node_groups = {
     workers-a = {
-      name = "workers-a"
-      subnet_ids                 = module.vpc.private_subnets[0]
+      name       = "workers-a"
+      subnet_ids = [module.vpc.private_subnets[0]]
     }
     workers-b = {
-      name = "workers-b"
-      subnet_ids                 = module.vpc.private_subnets[1]
+      name       = "workers-b"
+      subnet_ids = [module.vpc.private_subnets[1]]
     }
     workers-c = {
-      name = "workers-c"
-      subnet_ids                 = module.vpc.private_subnets[2]
+      name       = "workers-c"
+      subnet_ids = [module.vpc.private_subnets[2]]
     }
   }
 }
@@ -141,7 +141,7 @@ resource "helm_release" "cilium" {
   values = [
     templatefile("${path.module}/cilium.yaml", {
       cluster_endpoint = trim(module.eks.cluster_endpoint, "https://") # used for kube-proxy replacement
-      cluster_name     = local.name # used for ENI tagging
+      cluster_name     = local.name                                    # used for ENI tagging
     })
   ]
   depends_on = [
