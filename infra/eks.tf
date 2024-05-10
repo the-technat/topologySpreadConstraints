@@ -1,9 +1,11 @@
 locals {
-  name        = "spread"
-  region      = "eu-west-1"
-  eks_version = "1.28"
-  cidr        = "10.10.0.0/16"
-  azs         = slice(data.aws_availability_zones.available.names, 0, 3)
+  name           = "spread"
+  region         = "eu-west-1"
+  eks_version    = "1.28"
+  cidr           = "10.123.0.0/16"
+  service_cidr   = "10.127.0.0/16"
+  azs            = slice(data.aws_availability_zones.available.names, 0, 3)
+  instance_types = ["t3a.medium", "t3.medium", "t2.medium"] # must be AMD64 
 }
 terraform {
   required_version = ">= 1.5"
@@ -69,7 +71,7 @@ module "eks" {
   cluster_version                = local.eks_version
   cluster_endpoint_public_access = true
   cluster_addons                 = { coredns = { most_recent = true } }
-  cluster_service_ipv4_cidr      = "10.127.0.0/16" # may be ignored since we use cilium's kube-proxy replacement
+  cluster_service_ipv4_cidr      = local.service_cidr
   vpc_id                         = module.vpc.vpc_id
   control_plane_subnet_ids       = module.vpc.private_subnets
   node_security_group_additional_rules = {
@@ -89,11 +91,10 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
   access_entries                           = {}
   eks_managed_node_group_defaults = {
-    capacity_type  = "SPOT"
-    ami_type       = "AL2_x86_64"
-    ami_id         = data.aws_ami.eks_default.image_id
-    instance_types = ["t3a.medium", "t3.medium", "t2.medium"]
-    desired_size   = 1
+    capacity_type = "SPOT"
+    ami_type      = "AL2_x86_64"
+    ami_id        = data.aws_ami.eks_default.image_id
+    desired_size  = 1
     iam_role_additional_policies = {
       AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
     }
@@ -132,7 +133,7 @@ resource "null_resource" "purge_aws_networking" {
 }
 resource "helm_release" "cilium" {
   name       = "cilium"
-  repository = "https://helm.isovalent.com"
+  repository = "https://helm.cilium.io"
   chart      = "cilium"
   version    = "1.15.4"
   namespace  = "kube-system"
