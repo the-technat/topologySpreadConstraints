@@ -2,7 +2,7 @@ locals {
   name           = "spread"
   region         = "eu-west-1"
   eks_version    = "1.28"
-  vpc_cidr           = "10.123.0.0/16"
+  vpc_cidr       = "10.123.0.0/16"
   service_cidr   = "172.20.0.0/16"
   azs            = slice(data.aws_availability_zones.available.names, 0, 3)
   instance_types = ["t3a.medium", "t3.medium", "t2.medium"] # must be AMD64 
@@ -70,20 +70,20 @@ module "eks" {
   cluster_name                   = local.name
   cluster_version                = local.eks_version
   cluster_endpoint_public_access = true
-  cluster_addons                 = { coredns = { most_recent = true } }
-  cluster_service_ipv4_cidr      = local.service_cidr
-  vpc_id                         = module.vpc.vpc_id
-  control_plane_subnet_ids       = module.vpc.private_subnets
-  node_security_group_additional_rules = {
-    ingress_self_all = { # cilium requires many ports to be open node-by-node
-      description = "Node to node all ports/protocols"
-      protocol    = "-1"
-      from_port   = 0
-      to_port     = 0
-      type        = "ingress"
-      self        = true
+  cluster_addons = {
+    coredns = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true
     }
   }
+  cluster_service_ipv4_cidr                = local.service_cidr
+  vpc_id                                   = module.vpc.vpc_id
+  control_plane_subnet_ids                 = module.vpc.private_subnets
   cloudwatch_log_group_retention_in_days   = 1
   attach_cluster_encryption_policy         = false # KMS only causes problems when destroyed regurarly
   create_kms_key                           = false # KMS only causes problems when destroyed regurarly
@@ -114,38 +114,4 @@ module "eks" {
       subnet_ids = [module.vpc.private_subnets[2]]
     }
   }
-}
-resource "null_resource" "purge_aws_networking" {
-  triggers = {
-    eks = module.eks.cluster_endpoint # only do this when the cluster changes (e.g create/recreate)
-  }
-  provisioner "local-exec" { # this is required as the manifests are there even if you don't deploy the addon
-    command = <<EOT
-      aws eks --region ${local.region} update-kubeconfig --name ${local.name} --alias ${local.name}
-      curl -LO https://dl.k8s.io/release/v${local.eks_version}.0/bin/linux/amd64/kubectl
-      chmod 0755 ./kubectl
-      ./kubectl -n kube-system delete daemonset kube-proxy --ignore-not-found
-      ./kubectl -n kube-system delete daemonset aws-node --ignore-not-found
-      rm ./kubectl
-    EOT
-  }
-  depends_on = [module.eks.aws_eks_cluster]
-}
-resource "helm_release" "cilium" {
-  name       = "cilium"
-  repository = "https://helm.cilium.io"
-  chart      = "cilium"
-  version    = "1.15.4"
-  namespace  = "kube-system"
-  wait       = true
-  timeout    = 3600
-  values = [
-    templatefile("${path.module}/cilium.yaml", {
-      cluster_endpoint = trim(module.eks.cluster_endpoint, "https://") # used for kube-proxy replacement
-      cluster_name     = local.name                                    # used for ENI tagging
-    })
-  ]
-  depends_on = [
-    null_resource.purge_aws_networking,
-  ]
 }

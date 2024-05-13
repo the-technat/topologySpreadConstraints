@@ -23,7 +23,6 @@ resource "helm_release" "cluster_autoscaler" {
 
   depends_on = [
     module.eks,
-    helm_release.cilium,
     module.aws_cluster_autoscaler_irsa,
   ]
 }
