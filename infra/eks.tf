@@ -2,8 +2,8 @@ locals {
   name           = "spread"
   region         = "eu-west-1"
   eks_version    = "1.28"
-  cidr           = "10.123.0.0/16"
-  service_cidr   = "10.127.0.0/16"
+  vpc_cidr           = "10.123.0.0/16"
+  service_cidr   = "172.20.0.0/16"
   azs            = slice(data.aws_availability_zones.available.names, 0, 3)
   instance_types = ["t3a.medium", "t3.medium", "t2.medium"] # must be AMD64 
 }
@@ -57,10 +57,10 @@ module "vpc" {
   source             = "terraform-aws-modules/vpc/aws"
   version            = "~> 5.0"
   name               = local.name
-  cidr               = local.cidr
+  cidr               = local.vpc_cidr
   azs                = local.azs
-  public_subnets     = [for k, v in local.azs : cidrsubnet(local.cidr, 8, k)]
-  private_subnets    = [for k, v in local.azs : cidrsubnet(local.cidr, 8, k + 10)]
+  public_subnets     = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
+  private_subnets    = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 10)]
   enable_nat_gateway = true
   single_nat_gateway = true
 }
