@@ -11,6 +11,9 @@ rbac:
       eks.amazonaws.com/role-arn: ${role_arn}
 
 extraArgs:
+  v: 9
+  skip-nodes-with-local-storage: false
+  skip-nodes-with-system-pods: false
   scale-down-delay-after-add: 1m
   scale-down-delay-after-failure: 1m
   scale-down-unneeded-time: 1m
