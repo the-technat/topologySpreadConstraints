@@ -2,7 +2,7 @@
 # helm upgrade -i podinfo --create-namespace -n podinfo podinfo/podinfo -f podinfo.yaml
 # Default values for podinfo.
 
-replicaCount: 1
+replicaCount: 30
 
 ui:
   color: "#ffcc00"
@@ -24,12 +24,16 @@ topologySpreadConstraints:
         app.kubernetes.io/name: podinfo
     maxSkew: 1
     topologyKey: topology.kubernetes.io/zone
+    matchLabelKeys:
+    - pod-template-hash
     whenUnsatisfiable: DoNotSchedule
   - labelSelector:
       matchLabels:
         app.kubernetes.io/name: podinfo
     maxSkew: 1
     topologyKey: kubernetes.io/hostname
+    matchLabelKeys:
+    - pod-template-hash
     whenUnsatisfiable: DoNotSchedule
 
 podDisruptionBudget:
