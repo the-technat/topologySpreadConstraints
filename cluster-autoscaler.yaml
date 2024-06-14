@@ -1,14 +1,13 @@
 autoDiscovery:
-  clusterName: ${cluster_name}
+  clusterName: spread
 
-awsRegion: ${region}
+awsRegion: eu-west-1
 cloudProvider: aws
 
 rbac:
   serviceAccount:
-    name: ${sa_name}
-    annotations:
-      eks.amazonaws.com/role-arn: ${role_arn}
+    create: false # already created by eksctl
+    name: cluster-autoscaler
 
 extraArgs:
   skip-nodes-with-local-storage: false

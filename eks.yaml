@@ -4,7 +4,7 @@ kind: ClusterConfig
 metadata:
   name: spread
   region: eu-west-1
-  version: 1.28
+  version: "1.28"
   tags:
     repo: github.com/the-technat/topologySpreadConstraints
 kubernetesNetworkConfig:
@@ -13,7 +13,7 @@ kubernetesNetworkConfig:
 vpc:
   cidr: 10.123.0.0/16
   nat:
-    gateway: single
+    gateway: Single
   clusterEndpoints:
     publicAccess: true
     privateAccess: true
@@ -23,6 +23,12 @@ addons:
   - name: kube-proxy
 iam:
   withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: cluster-autoscaler
+        namespace: cluster-autoscaler
+      wellKnownPolicies:
+        autoScaler: true
 accessConfig:
   authenticationMode: API
   bootstrapClusterCreatorAdminPermissions: true
@@ -30,36 +36,30 @@ managedNodeGroups:
   - name: a
     availabilityZones: ["eu-west-1a"]
     spot: true
-    instanceType: t3a.small
+    instanceTypes: [t3a.medium, t3.medium, t2.medium]
     desiredCapacity: 1
     minSize: 1
     maxSize: 3
-    iam:
-      withAddonPolicies:
-        autoScaler: true
+    privateNetworking: true
     ssh:
       enableSsm: true
   - name: b
     availabilityZones: ["eu-west-1b"]
     spot: true
-    instanceType: t3a.small
+    instanceTypes: [t3a.medium, t3.medium, t2.medium]
     desiredCapacity: 1
     minSize: 1
     maxSize: 3
-    iam:
-      withAddonPolicies:
-        autoScaler: true
+    privateNetworking: true
     ssh:
       enableSsm: true
   - name: c
     availabilityZones: ["eu-west-1c"]
     spot: true
-    instanceType: t3a.small
+    instanceTypes: [t3a.medium, t3.medium, t2.medium]
     desiredCapacity: 1
     minSize: 1
     maxSize: 3
-    iam:
-      withAddonPolicies:
-        autoScaler: true
+    privateNetworking: true
     ssh:
       enableSsm: true
